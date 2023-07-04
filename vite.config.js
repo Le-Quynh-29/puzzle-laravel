@@ -19,6 +19,8 @@ export default defineConfig({
                 'resources/js/dropzone.js',
                 'resources/scss/dropzone.scss',
                 'resources/js/choose-image.js',
+                'resources/js/toastr.js',
+                'resources/scss/toastr.scss',
             ],
             refresh: true,
         }),
@@ -28,6 +30,7 @@ export default defineConfig({
             '~bootstrap': path.resolve(__dirname, 'node_modules/bootstrap'),
             '~@resources': path.resolve(__dirname, 'resources/'),
             '~dropzone': path.resolve(__dirname, 'node_modules/dropzone'),
+            '~toastr': path.resolve(__dirname, 'node_modules/toastr'),
         }
     },
     module: {

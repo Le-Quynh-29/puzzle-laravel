@@ -303,7 +303,7 @@
             </table>
         </button>
     </div>
-    <button type="button" class='glowing-btn'><span class='glowing-txt'>S<span class='faulty-letter'>TA</span>RT</span></button>
+    <button type="button" class='btn-start-game glowing-btn'><span class='glowing-txt'>S<span class='faulty-letter'>TA</span>RT</span></button>
 </div>
 </body>
 <script>

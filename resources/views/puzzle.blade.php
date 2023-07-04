@@ -3,7 +3,7 @@
 <div class="card text-center card-puzzle border-box">
     <div class="card-header">
         <div class="row">
-            <img class="col-5 p-left-2" src="{{ asset('storage/images/anime1.jpg') }}" alt="Card image cap">
+            <img class="col-5 p-left-2" src="" alt="Image choose" id="sample-image">
             <div class="col-7">
                 <div class="row">
                     <label class="col-4 text-start" style="color: #fff" for="time"><b>Thời gian:</b></label>

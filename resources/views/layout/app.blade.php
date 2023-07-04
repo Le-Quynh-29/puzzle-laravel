@@ -16,6 +16,7 @@
 <script>
     var _url = "{{ url('/') }}";
     var _token = '{!! csrf_token() !!}';
+    var _maxLevel = "{!! config('puzzle.puzzle_max_level') !!}";
 </script>
 @vite('resources/js/app.js')
 @yield('javascript')

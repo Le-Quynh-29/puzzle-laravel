@@ -22,7 +22,7 @@ class PuzzleGameControler extends Controller
 
     public function chooseImage()
     {
-        $listImage = ListImage::all();
+        $listImage = ListImage::orderBy('created_at', 'desc')->get();
         return view('choose-image', compact('listImage'));
     }
 

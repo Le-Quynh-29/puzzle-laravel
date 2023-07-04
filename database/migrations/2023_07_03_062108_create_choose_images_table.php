@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedBigInteger('image_id');
-            $table->integer('level_width_id');
-            $table->integer('level_height_id');
+            $table->integer('level_width');
+            $table->integer('level_height');
             $table->timestamps();
         });
     }

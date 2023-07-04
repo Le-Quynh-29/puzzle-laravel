@@ -14,7 +14,9 @@ class ChooseImage extends Model
     protected $fillable = [
         'user_id',
         'image_id',
-        'level_width_id',
-        'level_height_id',
+        'level_width',
+        'level_height',
     ];
+
+    public $timestamps = true;
 }

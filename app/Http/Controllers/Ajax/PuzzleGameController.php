@@ -25,6 +25,9 @@ class PuzzleGameController extends AjaxController
         set_time_limit(20);
         $file = $request->file('file');
         $file = $this->imageRepo->addImage($file);
+        if (is_string($file)) {
+            return $this->responseError($file);
+        }
         return $this->responseSuccess($file);
     }
 }

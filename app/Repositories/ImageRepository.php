@@ -8,6 +8,7 @@ use App\Traits\GameTrait;
 use Illuminate\Container\Container as App;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
 
 class ImageRepository extends AbstractRepository
 {
@@ -31,12 +32,21 @@ class ImageRepository extends AbstractRepository
     public function addImage($file)
     {
         $name = $file->getClientOriginalName();
+        $checkExist = ListImage::query()->where('name', $name)->exists();
+        if ($checkExist) {
+            return "Ảnh ".$name." đã tồn tại.";
+        }
         $size = $file->getSize() / 1024;
         $ext = $file->getClientOriginalExtension();
         $path = $this->storageUpload($file);
         $sizeImage = getimagesize(storage_path('app/images/' . $path->fileName));
         $width = $sizeImage[0];
         $height = $sizeImage[1];
+        $checkSize = $this->checkSizeImageUpload($width, $height);
+        if (!$checkSize || $width !== $height) {
+            $this->storageDeleteFile('images/' . $path->fileName);
+            return "Ảnh ".$name." không thể chia tỉ lệ.";
+        }
         $data = [
             'name' => $name,
             'ext' => $ext,
@@ -65,5 +75,27 @@ class ImageRepository extends AbstractRepository
         $response->header('Content-Type', $mineType);
 
         return $response;
+    }
+
+    /**
+     * check size image upload
+     *
+     * @param integer $width
+     * @param integer $height
+     * @return mixed
+     */
+    public function checkSizeImageUpload($width, $height)
+    {
+        $maxLevel = config('puzzle.puzzle_max_level');
+        $level = 3;
+        $hasLevel = false;
+        do {
+            if ($width % $level === 0 && $height % $level === 0) {
+                $hasLevel = true;
+                break;
+            }
+            $level += 1;
+        } while ($level <= $maxLevel);
+        return $hasLevel;
     }
 }

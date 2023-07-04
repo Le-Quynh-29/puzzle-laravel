@@ -11,6 +11,8 @@ import piece from "./piece";
         this.gameWidth = 390;
         this.gameHeight = 520;
         this.pieceSize = 130;
+        this.pathImage = '';
+        this.rateImage = 0;
         this.canvas;
         this.ctx;
         this.img = null;
@@ -44,35 +46,62 @@ import piece from "./piece";
             });
         },
         init: function () {
-            this.canvas = document.getElementById('canvas');
-            this.ctx = this.canvas.getContext('2d');
-            this.canvas.width = this.gameWidth;
-            this.canvas.height = this.gameHeight;
-            $('.card-body').append(this.canvas);
+            var el = this;
+            var selectedImage = localStorage.getItem('choose_image');
+            if (selectedImage) {
+                selectedImage = JSON.parse(selectedImage);
+                el.pathImage = selectedImage.path_image;
+                el.gameWidth = selectedImage.width_image;
+                el.gameHeight = selectedImage.height_image;
+                el.pieceSize = selectedImage.piece_image;
+                el.rateImage = selectedImage.rate_image;
+                $('#sample-image').attr('src', el.appUrl + '/puzzle/show-image/' + el.pathImage);
+                el.canvas = document.getElementById('canvas');
+                el.ctx = el.canvas.getContext('2d');
+                el.canvas.width = el.gameWidth;
+                el.canvas.height = el.gameHeight;
+                $('.card-body').append(el.canvas);
+                $('.card-puzzle').css({
+                    'width': el.gameWidth + 'px',
+                });
+            } else {
+                window.location.replace(el.appUrl);
+            }
         },
         loadImage: function () {
+            var el = this;
             this.img = new Image();
             this.img.onload = () => {
                 this.startGame();
             }
-            this.img.src = 'storage/images/anime1.jpg';
+            this.img.src = 'puzzle/show-image/' + el.pathImage;
         },
         startGame: function () {
             //create pieces
-            this.pieces = [
-                [null, null, null],
-                [null, null, null],
-                [null, null, null],
-                [null, null, null],
-            ];
-            this.defaultPieces = [
-                [null, null, null],
-                [null, null, null],
-                [null, null, null],
-            ];
+            var el = this;
+            var rows = [];
+            for (let i = 0; i < el.rateImage; i++) {
+                var col = [];
+                for(let j = 0; j < el.rateImage; j++) {
+                    col.push(null);
+                }
+                rows.push(col);
+            }
 
-            for (let row = 0; row < 3; row++) {
-                for (let col = 0; col < 3; col++) {
+            var row = [];
+            var addRow = 0;
+            do {
+                row.push(null);
+                addRow += 1;
+            } while (addRow < el.rateImage);
+
+            el.defaultPieces = rows;
+
+            rows.push(row);
+            el.pieces = rows;
+
+            for (let row = 0; row < el.pieceSize; row++) {
+                for (let col = 0; col < el.pieceSize; col++) {
                     let pieceCanvas = document.createElement('canvas');
                     pieceCanvas.width = this.pieceSize;
                     pieceCanvas.height = this.pieceSize;
@@ -90,7 +119,7 @@ import piece from "./piece";
                         this.pieceSize
                     );
                     //create pieces
-                    let newPiece = new piece(this, row * 3 + col, col, row + 1, pieceCanvas, this.pieceSize);
+                    let newPiece = new piece(this, row * el.rateImage + col, col, row + 1, pieceCanvas, this.pieceSize);
                     this.pieces[row + 1][col] = newPiece;
                     this.defaultPieces[row][col] = newPiece.id;
                 }
@@ -102,7 +131,8 @@ import piece from "./piece";
 
         },
         randomMove: function () {
-            let r = Math.round(Math.random() * 3);
+            var el = this;
+            let r = Math.round(Math.random() * el.rateImage);
             let willMove = null;
             switch (r) {
                 case 0:
@@ -125,8 +155,8 @@ import piece from "./piece";
                         willMove = {row: this.emptyPiece.row, col: this.emptyPiece.col + 1};
                     }
                     break;
-
             }
+
             if (willMove !== null) {
                 this.swapPiece(willMove, this.emptyPiece);
             }
@@ -134,10 +164,8 @@ import piece from "./piece";
         swapPiece: function (piece1, piece2) {
             this.pieces[piece2.row][piece2.col] = this.pieces[piece1.row][piece1.col];
             this.pieces[piece1.row][piece1.col] = null;
-
             this.pieces[piece2.row][piece2.col].row = piece2.row;
             this.pieces[piece2.row][piece2.col].col = piece2.col;
-
             this.emptyPiece = piece1;
         },
         loop: function () {
@@ -213,9 +241,6 @@ import piece from "./piece";
                 col: Math.floor(mousePos.x / this.pieceSize),
                 row: Math.floor(mousePos.y / this.pieceSize),
             }
-        },
-        checkGame: function () {
-
         },
         resetGame: function () {
             window.location.replace(this.appUrl + '/puzzle');

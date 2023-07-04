@@ -142,7 +142,11 @@ body {
 
 .height-70-vh {
     height: 70vh;
-    overflow-y: scroll;
+    overflow-y: auto;
+}
+
+.of-w-auth {
+    overflow-y: auto;
 }
 
 /*Override dropzone.css */
@@ -169,3 +173,23 @@ body {
     margin-right: 2px!important;
 }
 
+#modal-confirm .close {
+    border: none!important;
+    background-color: #fff!important;
+    font-weight: bold!important;
+    font-size: 24px!important;
+    color: #777;
+}
+
+.height-image {
+    height: fit-content!important;
+}
+
+.fit-image {
+    object-fit: cover!important;
+}
+
+.flex-end {
+    display: flex;
+    justify-content: end;
+}

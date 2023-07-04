@@ -31,34 +31,18 @@ trait GameTrait
     }
 
     /**
-     * Import attachment into storage
-     * @param string $importAttachmentPath
-     * @param string $importAttachmentName
-     * @return mixed
-     */
-    public function storageImportAttachment($importAttachmentPath, $importAttachmentName)
-    {
-        $this->createFolder();
-        $parentPath = storage_path('app') . '/images/';
-        $storageAttachmentPath = $parentPath . $importAttachmentName;
-        File::copy($importAttachmentPath, $storageAttachmentPath);
-        $this->storageSetPermission($storageAttachmentPath);
-        return base64_encode( '/images/' . $importAttachmentName);
-    }
-
-    /**
      * Delete a attachment
-     * @param string $attachmentPath
+     * @param string $fileName
      */
-    public function storageDeleteAttachment($attachmentPath)
+    public function storageDeleteFile($fileName)
     {
         // Check if file exists in storage
-        if (!Storage::disk('local')->exists($attachmentPath)) {
+        if (!Storage::disk('local')->exists($fileName)) {
             return;
         }
         // Process to delete file
         try {
-            Storage::delete($attachmentPath);
+            Storage::delete($fileName);
         } catch (RunTimeException $e) {
             dd($e->getMessage());
         }
