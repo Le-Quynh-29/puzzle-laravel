@@ -15,19 +15,20 @@
         this.$element.on('click', '.choose-image', function () {
             appChooseImage.chooseImage($(this));
         });
-        this.$element.on('click', '#modal-confirm .cancel', function () {
+        this.$element.on('click', '#modal-choose-image .cancel', function () {
             appChooseImage.hideModalConfirm();
         });
-        this.$element.on('click', '#modal-confirm .btn-modal-save', function () {
+        this.$element.on('click', '#modal-choose-image .btn-modal-save', function () {
             appChooseImage.startPuzzle();
         });
-        //
-        // $('#myModal').on('hidden.bs.modal', function (e) {
-        //     // Xử lý khi modal đã đóng
-        //     console.log('Modal đã đóng');
+        // this.$element.on('hidden.bs.modal', '#modal-choose-image', function () {
+        //     appChooseImage.reset();
         // });
-        this.$element.on('hidden.bs.modal', '#modal-confirm', function () {
-            appChooseImage.reset();
+        this.$element.on('click', '#modal-notification .close-modal', function () {
+            appChooseImage.hideModalNotification();
+        });
+        this.$element.on('change', '.check-time', function () {
+            appChooseImage.checkShowTime();
         });
     }
 
@@ -54,22 +55,38 @@
                 url: el.urlUploadImage,
                 maxFiles: 1,
                 maxFilesize: el.fileSize,
-                acceptedFiles: ".jpeg,.jpg,.png",
+                acceptedFiles: 'image/*',
                 headers: {
                     'X-CSRF-TOKEN': el.token
                 },
                 parallelUploads: 1,
                 uploadMultiple: false,
+                thumbnailWidth: 300,
                 dictFileTooBig: 'Dung lượng file quá ' + el.fileSize + 'MB.',
-                dictDefaultMessage: `<button type="button" class="icon upload margin-auto">
+                dictDefaultMessage: `<button type="button" class="icon upload margin-auto" style="width: 4rem; height: 4rem">
                         <span><i class="fa-solid fa-upload"></i></span>
                     </button>`,
                 timeout: 20000,
+                init: function () {
+                    this.on("thumbnail", function(file) {
+                        var checkRateWidthImage = el.optionSizeImage('width', file.width);
+                        var checkRateHeightImage = el.optionSizeImage('height', file.height);
+                        if (file.width < 250 || file.width > 1300 || file.height > 500) {
+                            file.rejectDimensions();
+                        } else if (!checkRateWidthImage || !checkRateHeightImage) {
+                            file.checkRateImage();
+                        } else if (checkRateWidthImage && checkRateHeightImage) {
+                            file.acceptRateImage();
+                        } else {
+                            file.acceptDimensions();
+                        }
+                    });
+                },
                 sending: function sending(file, xhr, formData) {
                     file.previewElement.remove();
                 },
                 error: function error(file, error) {
-                    toastr.error(error.error);
+                    el.errorUploadFile(error.error ? error.error : error);
                     file.previewElement.remove();
                     $('#upload-image-dropzone').removeClass('dz-started');
                     this.removeAllFiles();
@@ -86,6 +103,12 @@
                                     <img src="${el.appUrl + '/puzzle/show-image/' + el.pathImage}" class="w-100 fit-image" height="180">
                               </div>`;
                     $('#list-image').prepend(img);
+                },
+                accept: function(file, done) {
+                    file.acceptDimensions = done;
+                    file.acceptRateImage = done;
+                    file.rejectDimensions = function() { done("Kích thước ảnh chiều ngang tối thiểu 250px và tối đa 1300px, chiều dọc tối đa 500px."); };
+                    file.checkRateImage = function() { done("Ảnh "+ file.name +" không thể chia tỉ lệ."); };
                 }
             });
         },
@@ -98,44 +121,58 @@
         },
         showChooseImage: function (pathImg, width, height) {
             var el = this;
-            el.optionSizeImage(width, height);
+            el.optionSizeImage('width', width);
+            el.optionSizeImage('height', height);
+            $('#yes').prop('checked', true);
+            $('#level-1').prop('checked', true);
             $('#choose-image').attr('src', el.appUrl + '/puzzle/show-image/' + pathImg);
-            $('#modal-confirm').modal('show');
+            $('#modal-choose-image').modal('show');
         },
         hideModalConfirm: function () {
-            $('#modal-confirm').modal('toggle');
+            $('#modal-choose-image').modal('toggle');
         },
-        optionSizeImage: function (width, height) {
+        optionSizeImage: function (idSize, size) {
             var el = this;
-            $('#rate-image').html('');
+            $('#' + idSize).html('');
             var options = '';
             var level = 3;
+            var checkRateImage = false;
             do {
-                if (width % level === 0 && height % level === 0) {
+                if (size % level === 0) {
+                    checkRateImage = true;
                     options += `<div class="form-check">
-                                <input class="form-check-input" type="radio" name="rate-image" id="${'rate-' + level}"
+                                <input class="form-check-input" type="radio" name="${idSize}-image" id="${idSize + "-" + level}"
                                        value="${level}">
-                                <label class="form-check-label" for="${'rate-' + level}">
+                                <label class="form-check-label" for="${idSize + "-" + level}">
                                     ${level}
                                 </label>
                             </div>`;
                 }
                 level += 1;
             } while (level <= el.maxLevel);
-            $('#rate-image').append(options);
+            $('#' + idSize).append(options);
+            return checkRateImage;
         },
         startPuzzle: function () {
             var el = this;
-            var rateImage = $('input[name=rate-image]:checked').val();
-
-            if (rateImage !== undefined) {
-                var pieceSize = el.widthImage / rateImage;
+            var rateWidthImage = $('input[name=width-image]:checked').val();
+            var rateHeightImage = $('input[name=height-image]:checked').val();
+            var level = $('input[name=level-image]:checked').val();
+            var checkTime = $('input[name=check-time]:checked').val();
+            if (rateWidthImage !== undefined && rateHeightImage !== undefined) {
+                var pieceWidthSize = el.widthImage / rateWidthImage;
+                var pieceHeightSize = el.heightImage / rateHeightImage;
                 var chooseImage = {
                     'path_image' : el.pathImage,
                     'width_image' : el.widthImage,
-                    'height_image' : el.heightImage + pieceSize,
-                    'rate_image' : rateImage,
-                    'piece_image' : pieceSize,
+                    'height_image' : el.heightImage + pieceHeightSize,
+                    'rate_width_image' : rateWidthImage,
+                    'rate_height_image' : rateHeightImage,
+                    'piece_width_image' : pieceWidthSize,
+                    'piece_height_image' : pieceHeightSize,
+                    'level' : level,
+                    'check_time_calculation' : checkTime,
+                    'time_calculation' : $('#set-time').val(),
                 }
                 localStorage.setItem('choose_image', JSON.stringify(chooseImage));
                 window.location.replace(el.appUrl + '/puzzle');
@@ -148,6 +185,23 @@
             this.widthImage = 0;
             this.heightImage = 0;
             localStorage.removeItem('choose_image');
+        },
+        errorUploadFile: function (error) {
+            $('#modal-notification .modal-title').text('Lỗi');
+            $('#modal-notification .modal-body').text(error);
+            $('#modal-notification').modal('show');
+        },
+        hideModalNotification: function () {
+            $('#modal-notification').modal('toggle');
+        },
+        checkShowTime: function () {
+            var checkTime = $('input[name=check-time]:checked').val();
+            if (checkTime === "no") {
+                $('#set-time').addClass('d-none');
+            } else {
+                $('#set-time').val('');
+                $('#set-time').removeClass('d-none');
+            }
         }
     };
 

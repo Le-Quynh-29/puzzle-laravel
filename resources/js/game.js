@@ -10,9 +10,11 @@ import piece from "./piece";
         this.token = _token;
         this.gameWidth = 390;
         this.gameHeight = 520;
-        this.pieceSize = 130;
+        this.pieceWidthSize = 130;
+        this.pieceHeightSize = 130;
         this.pathImage = '';
-        this.rateImage = 0;
+        this.rateWidthImage = 0;
+        this.rateHeightImage = 0;
         this.canvas;
         this.ctx;
         this.img = null;
@@ -20,12 +22,35 @@ import piece from "./piece";
         this.defaultPieces = [];
         this.selectedPiece = {};
         this.emptyPiece = {row: 0, col: 0};
-        this.timeStart = 30;
+        this.timeStart = 15;
+        this.maxLevel = _maxLevel;
+        this.maxRateX = 0;
+        this.maxRateY = 0;
+        this.level = 0;
+        this.checkResetOrExit = '';
         this.$element.on('click', '.check', function () {
             appGame.checkWin();
         });
         this.$element.on('click', '.reset', function () {
             appGame.resetGame();
+        });
+        this.$element.on('click', '.previous', function () {
+            appGame.redirectPageChooseImage();
+        });
+        this.$element.on('click', '#exit', function () {
+            appGame.exitGame();
+        });
+        this.$element.on('click', '#modal-notification .close-modal', function () {
+            appGame.hideModalNotification();
+        });
+        this.$element.on('click', '#modal-confirm .cancel', function () {
+            appGame.checkHideModalOrRedirectPage();
+        });
+        this.$element.on('click', '#modal-confirm .close', function () {
+            appGame.hideModalConfirm();
+        });
+        this.$element.on('click', '#modal-confirm .btn-modal-save', function () {
+            appGame.resetOrExitGame();
         });
     };
 
@@ -33,6 +58,8 @@ import piece from "./piece";
         _init: function _init() {
             this.ajaxSetup();
             this.init();
+            this.setPieces();
+            this.setDefaultPieces();
             this.loadImage();
             this.loop();
             this.listenMouseEvent();
@@ -53,8 +80,11 @@ import piece from "./piece";
                 el.pathImage = selectedImage.path_image;
                 el.gameWidth = selectedImage.width_image;
                 el.gameHeight = selectedImage.height_image;
-                el.pieceSize = selectedImage.piece_image;
-                el.rateImage = selectedImage.rate_image;
+                el.pieceWidthSize = selectedImage.piece_width_image;
+                el.pieceHeightSize = selectedImage.piece_height_image;
+                el.rateWidthImage = selectedImage.rate_width_image;
+                el.rateHeightImage = selectedImage.rate_height_image;
+                el.level = selectedImage.level;
                 $('#sample-image').attr('src', el.appUrl + '/puzzle/show-image/' + el.pathImage);
                 el.canvas = document.getElementById('canvas');
                 el.ctx = el.canvas.getContext('2d');
@@ -65,7 +95,7 @@ import piece from "./piece";
                     'width': el.gameWidth + 'px',
                 });
             } else {
-                window.location.replace(el.appUrl);
+                window.location.replace(this.appUrl);
             }
         },
         loadImage: function () {
@@ -77,62 +107,50 @@ import piece from "./piece";
             this.img.src = 'puzzle/show-image/' + el.pathImage;
         },
         startGame: function () {
-            //create pieces
             var el = this;
-            var rows = [];
-            for (let i = 0; i < el.rateImage; i++) {
-                var col = [];
-                for(let j = 0; j < el.rateImage; j++) {
-                    col.push(null);
-                }
-                rows.push(col);
-            }
-
-            var row = [];
-            var addRow = 0;
-            do {
-                row.push(null);
-                addRow += 1;
-            } while (addRow < el.rateImage);
-
-            el.defaultPieces = rows;
-
-            rows.push(row);
-            el.pieces = rows;
-
-            for (let row = 0; row < el.pieceSize; row++) {
-                for (let col = 0; col < el.pieceSize; col++) {
+            for (let row = 0; row < el.rateHeightImage; row++) {
+                for (let col = 0; col < el.rateWidthImage; col++) {
                     let pieceCanvas = document.createElement('canvas');
-                    pieceCanvas.width = this.pieceSize;
-                    pieceCanvas.height = this.pieceSize;
+                    pieceCanvas.width = this.pieceWidthSize;
+                    pieceCanvas.height = this.pieceHeightSize;
                     let pieceCtx = pieceCanvas.getContext('2d');
 
                     pieceCtx.drawImage(
-                        this.img,
-                        col * this.pieceSize,
-                        row * this.pieceSize,
-                        this.pieceSize,
-                        this.pieceSize,
+                        el.img,
+                        col * el.pieceWidthSize,
+                        row * el.pieceHeightSize,
+                        el.pieceWidthSize,
+                        el.pieceHeightSize,
                         0,
                         0,
-                        this.pieceSize,
-                        this.pieceSize
+                        el.pieceWidthSize,
+                        el.pieceHeightSize
                     );
                     //create pieces
-                    let newPiece = new piece(this, row * el.rateImage + col, col, row + 1, pieceCanvas, this.pieceSize);
-                    this.pieces[row + 1][col] = newPiece;
-                    this.defaultPieces[row][col] = newPiece.id;
+                    el.maxRateX = el.maxRate(el.pieceWidthSize);
+                    el.maxRateY = el.maxRate(el.pieceHeightSize);
+
+                    let newPiece = new piece(this, row * 3 + col, col, row + 1, pieceCanvas, el.pieceWidthSize,
+                        el.pieceHeightSize, el.maxRateX, el.maxRateY);
+                    el.pieces[row + 1][col] = newPiece;
+                    el.defaultPieces[row][col] = newPiece.id;
                 }
             }
             //random game
-            for (let randomTime = 0; randomTime < 100; randomTime++) {
+            var randomLevel = 20;
+            if (el.level == 2) {
+                randomLevel = 100;
+            } else if (el.level == 3) {
+                randomLevel = 1000;
+            }
+            for (let randomTime = 0; randomTime < randomLevel; randomTime++) {
                 this.randomMove();
             }
 
         },
         randomMove: function () {
             var el = this;
-            let r = Math.round(Math.random() * el.rateImage);
+            let r = Math.round(Math.random() * 3);
             let willMove = null;
             switch (r) {
                 case 0:
@@ -141,7 +159,7 @@ import piece from "./piece";
                     }
                     break;
                 case 1:
-                    if (this.emptyPiece.row < 3) {
+                    if (this.emptyPiece.row < el.rateHeightImage) {
                         willMove = {row: this.emptyPiece.row + 1, col: this.emptyPiece.col};
                     }
                     break;
@@ -151,12 +169,11 @@ import piece from "./piece";
                     }
                     break;
                 case 3:
-                    if (this.emptyPiece.col < 2 && this.emptyPiece.row > 1) {
+                    if (this.emptyPiece.col < (el.rateWidthImage - 1) && this.emptyPiece.row > 1) {
                         willMove = {row: this.emptyPiece.row, col: this.emptyPiece.col + 1};
                     }
                     break;
             }
-
             if (willMove !== null) {
                 this.swapPiece(willMove, this.emptyPiece);
             }
@@ -238,12 +255,15 @@ import piece from "./piece";
         },
         getCorByMousePosition: function (mousePos) {
             return {
-                col: Math.floor(mousePos.x / this.pieceSize),
-                row: Math.floor(mousePos.y / this.pieceSize),
+                col: Math.floor(mousePos.x / this.pieceWidthSize),
+                row: Math.floor(mousePos.y / this.pieceHeightSize),
             }
         },
         resetGame: function () {
-            window.location.replace(this.appUrl + '/puzzle');
+            $('#modal-confirm .modal-title').text('Sắp xếp lại vị trí');
+            $('#modal-confirm .modal-body').text('Bạn có chắc muốn sắp xếp lại vị trí các mảnh ghép không?');
+            $('#modal-confirm').modal('show');
+            this.checkResetOrExit = 'reset';
         },
         checkWin: function () {
             let check = true;
@@ -257,10 +277,17 @@ import piece from "./piece";
                     }
                 }
             }
+
             if (check) {
-                window.location.replace(this.appUrl);
+                $('#modal-confirm .modal-title').text('Thông báo');
+                $('#modal-confirm .modal-body').html(`<p class="color-success"><b>Chính xác</b></p>
+                                                    <b>Bạn có muốn tiếp tục trò chơi với ảnh khác không?</b>`);
+                $('#modal-confirm').modal('show');
+                this.checkResetOrExit = 'finish-image';
             } else {
-                alert('Chưa đúng');
+                $('#modal-notification .modal-title').text('Thông báo');
+                $('#modal-notification .modal-body').html(`<p class="color-error"><b>Chưa chính xác</b></p>`);
+                $('#modal-notification').modal('show');
             }
         },
         checkTime: function () {
@@ -279,6 +306,76 @@ import piece from "./piece";
                     window.location.replace(this.appUrl + '/puzzle');
                 }
             }, 1000);
+        },
+        setDefaultPieces: function () {
+            //create pieces
+            var el = this;
+            var rows = [];
+            for (let row = 0; row < el.rateHeightImage; row++) {
+                var cols = [];
+                for (let col = 0; col < el.rateWidthImage; col++) {
+                    cols.push(null);
+                }
+                rows.push(cols);
+            }
+            el.defaultPieces = rows;
+        },
+        setPieces: function () {
+            var el = this;
+            var rows = [];
+            for (let row = 0; row < parseInt(el.rateHeightImage) + 1; row++) {
+                var cols = [];
+                for (let col = 0; col < el.rateWidthImage; col++) {
+                    cols.push(null);
+                }
+                rows.push(cols);
+            }
+            el.pieces = rows;
+        },
+        maxRate: function (pieceSize) {
+            var checkSize = 2;
+            var setMax = 2
+            do {
+                if (pieceSize % checkSize === 0) {
+                    setMax = checkSize;
+                }
+                checkSize += 1;
+            } while (checkSize <= this.maxLevel);
+            return setMax;
+        },
+        redirectPageChooseImage: function () {
+            $('#modal-confirm .modal-title').text('Thoát trò chơi');
+            $('#modal-confirm .modal-body').text('Bạn có chắc muốn thoát trò chơi không?');
+            $('#modal-confirm').modal('show');
+            this.checkResetOrExit = 'choose-image';
+        },
+        exitGame: function () {
+            $('#modal-confirm .modal-title').text('Thoát trò chơi');
+            $('#modal-confirm .modal-body').text('Bạn có chắc muốn thoát trò chơi không?');
+            $('#modal-confirm').modal('show');
+            this.checkResetOrExit = 'exit';
+        },
+        hideModalNotification: function () {
+            $('#modal-notification').modal('toggle');
+        },
+        hideModalConfirm: function () {
+            $('#modal-confirm').modal('toggle');
+        },
+        checkHideModalOrRedirectPage: function () {
+            if (this.checkResetOrExit === 'finish-image') {
+                window.location.replace(this.appUrl);
+            } else {
+                $('#modal-confirm').modal('toggle');
+            }
+        },
+        resetOrExitGame: function () {
+            if (this.checkResetOrExit === 'reset') {
+                window.location.replace(this.appUrl + '/puzzle');
+            } else if (this.checkResetOrExit === 'exit') {
+                window.location.replace(this.appUrl);
+            } else {
+                window.location.replace(this.appUrl + '/puzzle/choose-image');
+            }
         }
     };
 

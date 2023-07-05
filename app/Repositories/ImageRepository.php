@@ -42,11 +42,7 @@ class ImageRepository extends AbstractRepository
         $sizeImage = getimagesize(storage_path('app/images/' . $path->fileName));
         $width = $sizeImage[0];
         $height = $sizeImage[1];
-        $checkSize = $this->checkSizeImageUpload($width, $height);
-        if (!$checkSize || $width !== $height) {
-            $this->storageDeleteFile('images/' . $path->fileName);
-            return "Ảnh ".$name." không thể chia tỉ lệ.";
-        }
+
         $data = [
             'name' => $name,
             'ext' => $ext,
@@ -75,27 +71,5 @@ class ImageRepository extends AbstractRepository
         $response->header('Content-Type', $mineType);
 
         return $response;
-    }
-
-    /**
-     * check size image upload
-     *
-     * @param integer $width
-     * @param integer $height
-     * @return mixed
-     */
-    public function checkSizeImageUpload($width, $height)
-    {
-        $maxLevel = config('puzzle.puzzle_max_level');
-        $level = 3;
-        $hasLevel = false;
-        do {
-            if ($width % $level === 0 && $height % $level === 0) {
-                $hasLevel = true;
-                break;
-            }
-            $level += 1;
-        } while ($level <= $maxLevel);
-        return $hasLevel;
     }
 }

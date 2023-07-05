@@ -38,8 +38,56 @@
                 <div class="row">
                     <img class="col-5 height-image" src="" alt="Choose image" id="choose-image">
                     <div class="col-7">
-                        <h6>Chọn tỉ lệ</h6>
-                        <div class="row" id="rate-image">
+                        <h6>Chọn chia chiều ngang</h6>
+                        <div class="row" id="width">
+                        </div>
+                        <h6>Chọn chia chiều dọc</h6>
+                        <div class="row" id="height">
+                        </div>
+
+                        <div class="row" id="level">
+                            <div class="col-6 p-0">
+                                <h6>Chọn mức chơi</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="level-image" id="level-1"
+                                           value="1" checked>
+                                    <label class="form-check-label" for="level-1">
+                                        Dễ
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="level-image" id="level-2"
+                                           value="2">
+                                    <label class="form-check-label" for="level-2">
+                                        Trung bình
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="level-image" id="level-3"
+                                           value="3">
+                                    <label class="form-check-label" for="level-3">
+                                        Khó
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6 p-0">
+                                <h6>Tính thời gian</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input check-time" type="radio" name="check-time" id="yes"
+                                           value="yes" checked>
+                                    <label class="form-check-label" for="yes">
+                                        Có
+                                    </label>
+                                </div>
+                                <input type="text" id="set-time" class="form-control" placeholder="Tính bằng giây">
+                                <div class="form-check">
+                                    <input class="form-check-input check-time" type="radio" name="check-time" id="no"
+                                           value="no">
+                                    <label class="form-check-label" for="no">
+                                        Không
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -50,6 +98,12 @@
         @endslot
         @slot('title_cancel')
             Hủy
+        @endslot
+    @endcomponent
+    @component('modal.notification')
+        @slot('title_header')
+        @endslot
+        @slot('content')
         @endslot
     @endcomponent
 @endsection
