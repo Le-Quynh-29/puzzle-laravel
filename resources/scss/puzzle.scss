@@ -7,8 +7,11 @@ body {
     background: #47536b;
 }
 
+.card-choose-image {
+    width: 50rem;
+}
+
 .card-puzzle {
-    width: 25rem;
     margin: 5rem auto;
 }
 
@@ -188,7 +191,12 @@ body {
     margin-right: 2px !important;
 }
 
-#modal-confirm .close, #modal-choose-image .close, #modal-notification .close {
+.modal {
+    width: 100vw;
+    height: 100vh;
+}
+
+#modal-confirm .close, #modal-choose-image .close, #modal-notification .close, #modal-game .close {
     border: none !important;
     background-color: #fff !important;
     font-weight: bold !important;

@@ -26,8 +26,11 @@ import piece from "./piece";
         this.maxLevel = _maxLevel;
         this.maxRateX = 0;
         this.maxRateY = 0;
-        this.level = 0;
+        this.level = 1;
         this.checkResetOrExit = '';
+        this.setIntervalTime;
+        this.checkTimeCalculation = '';
+        this.setTimeCalculation = '';
         this.$element.on('click', '.check', function () {
             appGame.checkWin();
         });
@@ -52,12 +55,28 @@ import piece from "./piece";
         this.$element.on('click', '#modal-confirm .btn-modal-save', function () {
             appGame.resetOrExitGame();
         });
+        this.$element.on('click', '#pause', function () {
+            appGame.showModalPause();
+        });
+        this.$element.on('click', '#modal-game .close', function () {
+            appGame.hideModalGame();
+        });
+        this.$element.on('click', '#modal-game #continue', function () {
+            appGame.hideModalGame();
+        });
+        this.$element.on('click', '#modal-game #play-again', function () {
+            appGame.resetWhenTimeOut();
+        });
+        this.$element.on('click', '#modal-game #exit', function () {
+            appGame.exitGameTimeOutOrPause();
+        });
     };
 
     AppGame.prototype = {
         _init: function _init() {
             this.ajaxSetup();
             this.init();
+            this.checkLevel();
             this.setPieces();
             this.setDefaultPieces();
             this.loadImage();
@@ -85,6 +104,8 @@ import piece from "./piece";
                 el.rateWidthImage = selectedImage.rate_width_image;
                 el.rateHeightImage = selectedImage.rate_height_image;
                 el.level = selectedImage.level;
+                el.checkTimeCalculation = selectedImage.check_time_calculation;
+                el.setTimeCalculation = selectedImage.time_calculation;
                 $('#sample-image').attr('src', el.appUrl + '/puzzle/show-image/' + el.pathImage);
                 el.canvas = document.getElementById('canvas');
                 el.ctx = el.canvas.getContext('2d');
@@ -137,16 +158,12 @@ import piece from "./piece";
                 }
             }
             //random game
-            var randomLevel = 20;
-            if (el.level == 2) {
-                randomLevel = 100;
-            } else if (el.level == 3) {
-                randomLevel = 1000;
-            }
+            var level = el.checkLevel();
+            var randomLevel = level.random_move;
+            el.timeStart = level.time;
             for (let randomTime = 0; randomTime < randomLevel; randomTime++) {
                 this.randomMove();
             }
-
         },
         randomMove: function () {
             var el = this;
@@ -216,6 +233,8 @@ import piece from "./piece";
         listenMouseEvent: function () {
             this.canvas.addEventListener('mousedown', (event) => this.mouseDown(event));
             this.canvas.addEventListener('mouseup', (event) => this.mouseUp(event));
+            this.canvas.addEventListener('touchstart', (event) => this.touchStart(event));
+            this.canvas.addEventListener('touchend', (event) => this.touchEnd(event));
         },
         mouseDown: function (event) {
             let mousePos = this.getMousePos(event);
@@ -259,6 +278,48 @@ import piece from "./piece";
                 row: Math.floor(mousePos.y / this.pieceHeightSize),
             }
         },
+        touchStart: function (event) {
+            let mousePos = this.getTouchPos(event);
+            this.selectedPiece = this.getCorByTouchPosition(mousePos);
+        },
+        touchEnd: function (event) {
+            let mousePos = this.getTouchPos(event);
+            let mouseUpCor = this.getCorByTouchPosition(mousePos);
+            if (
+                mouseUpCor.row !== this.emptyPiece.row ||
+                mouseUpCor.col !== this.emptyPiece.col
+            ) {
+                return;
+            }
+
+            if (
+                (
+                    this.selectedPiece.row === this.emptyPiece.row &&
+                    (this.selectedPiece.col - 1 === this.emptyPiece.col || this.selectedPiece.col + 1 === this.emptyPiece.col)
+                )
+                ||
+                (
+                    this.selectedPiece.col === this.emptyPiece.col &&
+                    (this.selectedPiece.row - 1 === this.emptyPiece.row || this.selectedPiece.row + 1 === this.emptyPiece.row)
+                )
+            ) {
+                //swap object in data
+                this.swapPiece(this.selectedPiece, mouseUpCor);
+            }
+        },
+        getTouchPos: function (event) {
+            var rect = this.canvas.getBoundingClientRect();
+            return {
+                x: event.changedTouches[0].clientX - rect.left,
+                y: event.changedTouches[0].clientY - rect.top
+            };
+        },
+        getCorByTouchPosition: function (mousePos) {
+            return {
+                col: Math.floor(mousePos.x / this.pieceWidthSize),
+                row: Math.floor(mousePos.y / this.pieceHeightSize),
+            }
+        },
         resetGame: function () {
             $('#modal-confirm .modal-title').text('Sắp xếp lại vị trí');
             $('#modal-confirm .modal-body').text('Bạn có chắc muốn sắp xếp lại vị trí các mảnh ghép không?');
@@ -291,21 +352,16 @@ import piece from "./piece";
             }
         },
         checkTime: function () {
-            $('#time').val("00:" + this.timeStart);
-            setInterval(() => {
-                this.timeStart -= 1;
-                // does the same job as parseInt truncates the float
-                let minutes = (this.timeStart / 60) | 0;
-                let seconds = (this.timeStart % 60) | 0;
-
-                minutes = minutes < 10 ? "0" + minutes : minutes;
-                seconds = seconds < 10 ? "0" + seconds : seconds;
-
-                $('#time').val(minutes + ":" + seconds);
-                if (this.timeStart === 0) {
-                    window.location.replace(this.appUrl + '/puzzle');
-                }
-            }, 1000);
+            var el = this;
+            if (el.checkTimeCalculation === "yes") {
+                $('#time-calculation').removeClass('d-none');
+                $('#btn-pause').removeClass('d-none');
+                el.intervalTime();
+            } else {
+                $('#time-calculation').addClass('d-none');
+                $('#btn-pause').addClass('d-none');
+                clearInterval(el.setIntervalTime);
+            }
         },
         setDefaultPieces: function () {
             //create pieces
@@ -333,8 +389,8 @@ import piece from "./piece";
             el.pieces = rows;
         },
         maxRate: function (pieceSize) {
-            var checkSize = 2;
-            var setMax = 2
+            var checkSize = 0;
+            var setMax = 0;
             do {
                 if (pieceSize % checkSize === 0) {
                     setMax = checkSize;
@@ -376,6 +432,78 @@ import piece from "./piece";
             } else {
                 window.location.replace(this.appUrl + '/puzzle/choose-image');
             }
+        },
+        checkLevel: function () {
+            var el = this;
+            var level = null;
+            if (el.rateWidthImage >= 5 && el.rateHeightImage >= 5) {
+                if (el.level == 1) {
+                    level = {time: el.setTimeCalculation !== '' ? parseInt(el.setTimeCalculation) : 30, random_move: 100}
+                } else if (el.level == 2) {
+                    level = {time: el.setTimeCalculation !== '' ? parseInt(el.setTimeCalculation) : 60, random_move: 1000}
+                } else {
+                    level = {time: el.setTimeCalculation !== '' ? parseInt(el.setTimeCalculation) : 120, random_move: 10000}
+                }
+            } else {
+                if (el.level == 1) {
+                    level = {time: el.setTimeCalculation !== '' ? parseInt(el.setTimeCalculation) : 15, random_move: 50}
+                } else if (el.level == 2) {
+                    level = {time: el.setTimeCalculation !== '' ? parseInt(el.setTimeCalculation) : 30, random_move: 150}
+                } else {
+                    level = {time: el.setTimeCalculation !== '' ? parseInt(el.setTimeCalculation) : 60, random_move: 1000}
+                }
+            }
+            return level;
+        },
+        intervalTime: function () {
+            var el = this;
+            el.setIntervalTime = setInterval(() => {
+                el.timeStart -= 1;
+                // does the same job as parseInt truncates the float
+                let minutes = (el.timeStart / 60) | 0;
+                let seconds = (el.timeStart % 60) | 0;
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                $('#time').val(minutes + ":" + seconds);
+                if (el.timeStart === 0) {
+                    clearInterval(el.setIntervalTime);
+                    $('#modal-game .modal-title').text('Hết thời gian');
+                    var str = `<div class="row p-2">
+                            <button type="button" class="btn btn-success w-25 m-auto" id="play-again">Chơi lại</button>
+                       </div>
+                       <div class="row">
+                            <button type="button" class="btn btn-danger w-25 m-auto" id="exit">Thoát</button>
+                       </div>`;
+                    $('#modal-game .modal-body').html(str);
+                    $('#modal-game').modal('show');
+                }
+            }, 1000);
+        },
+        showModalPause: function () {
+            clearInterval(this.setIntervalTime);
+            $('#modal-game .modal-title').text('Tạm dừng');
+            var str = `<div class="row p-2">
+                            <button type="button" class="btn btn-success w-25 m-auto" id="continue">Tiếp tục</button>
+                       </div>
+                       <div class="row">
+                            <button type="button" class="btn btn-danger w-25 m-auto" id="exit">Thoát</button>
+                       </div>`;
+            $('#modal-game .modal-body').html(str);
+            $('#modal-game').modal('show');
+        },
+        hideModalGame: function () {
+            if (this.timeStart > 0) {
+                this.intervalTime();
+            }
+            $('#modal-game').modal('toggle');
+        },
+        resetWhenTimeOut: function () {
+            window.location.replace(this.appUrl + '/puzzle');
+        },
+        exitGameTimeOutOrPause: function () {
+            window.location.replace(this.appUrl);
         }
     };
 

@@ -4,7 +4,7 @@
     <div class="card-header">
         <div class="row header">
             <div class="col-7">
-                <div class="row h-25">
+                <div class="row h-25 d-none" id="time-calculation">
                     <label class="col-12 text-start" style="color: #fff" for="time"><b>Thời gian:</b></label>
                     <div class="col-12 p-right-2">
                         <input type="text" class="form-control text-center h-100" disabled id="time">
@@ -33,7 +33,7 @@
                     <div class="col-6">
                         <button type="button" class="btn btn-outline-danger w-100" id="exit"><i class="fa-regular fa-circle-xmark"></i></button>
                     </div>
-                    <div class="col-6 p-0">
+                    <div class="col-6 p-0 d-none" id="btn-pause">
                         <button type="button" class="btn btn-outline-warning w-100" id="pause"><i class="fa-solid fa-play"></i></button>
                     </div>
                 </div>
@@ -60,6 +60,12 @@
         @endslot
         @slot('title_cancel')
             Không
+        @endslot
+    @endcomponent
+    @component('modal.game')
+        @slot('title_header')
+        @endslot
+        @slot('content')
         @endslot
     @endcomponent
 </div>

@@ -4,7 +4,7 @@
     @vite('resources/scss/toastr.scss')
 @endsection
 @section('content')
-    <div class="card text-center card-puzzle border-box">
+    <div class="card text-center card-puzzle card-choose-image border-box">
         <div class="card-header">
             <div class="row">
                 <div class="wrapper col-12 flex-end">
@@ -22,7 +22,7 @@
                 @foreach($listImage as $image)
                     <div class="col-6 p-2 choose-image" data-path="{{ $image->path }}" data-width="{{ $image->width }}"
                          data-height="{{ $image->height }}">
-                        <img src="{{ route('puzzle.show.image', $image->path) }}" class="w-100 fit-image" height="180">
+                        <img src="{{ route('puzzle.show.image', $image->path) }}" class="w-100 fit-image" height="300">
                     </div>
                 @endforeach
             </div>

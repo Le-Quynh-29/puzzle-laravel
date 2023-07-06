@@ -71,9 +71,10 @@
                     this.on("thumbnail", function(file) {
                         var checkRateWidthImage = el.optionSizeImage('width', file.width);
                         var checkRateHeightImage = el.optionSizeImage('height', file.height);
-                        if (file.width < 250 || file.width > 1300 || file.height > 500) {
-                            file.rejectDimensions();
-                        } else if (!checkRateWidthImage || !checkRateHeightImage) {
+                        // if (file.width < 250 || file.width > 1300 || file.height > 500) {
+                        //     file.rejectDimensions();
+                        // } else
+                            if (!checkRateWidthImage || !checkRateHeightImage) {
                             file.checkRateImage();
                         } else if (checkRateWidthImage && checkRateHeightImage) {
                             file.acceptRateImage();
@@ -100,9 +101,10 @@
                     el.showChooseImage(el.pathImage, el.widthImage, el.heightImage);
                     var img = `<div class="col-6 p-2 choose-image" data-path="${el.pathImage}" data-width="${el.widthImage}"
                                 data-height="${el.heightImage}">
-                                    <img src="${el.appUrl + '/puzzle/show-image/' + el.pathImage}" class="w-100 fit-image" height="180">
+                                    <img src="${el.appUrl + '/puzzle/show-image/' + el.pathImage}" class="w-100 fit-image" height="300">
                               </div>`;
                     $('#list-image').prepend(img);
+                    this.removeAllFiles();
                 },
                 accept: function(file, done) {
                     file.acceptDimensions = done;
